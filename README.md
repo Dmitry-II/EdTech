@@ -1,16 +1,48 @@
-# React + Vite
+Руководство пользователя: Локальная EdTech-платформа
+Эта платформа — сервис для комфортного прохождения курсов. Система автоматически индексирует ваши видеоматериалы, выстраивает структуру занятий и сохраняет прогресс обучения (процент прохождения и позицию в видео).
+Организация файлов
+Для того чтобы система «увидела» ваши курсы, необходимо соблюдать структуру папок в директории проекта: public/courses/.
+Правило трех уровней
+Платформа ожидает следующую иерархию:
+Корневая папка (Название курса)
+Папка модуля (Например: "01. Введение"/любое название/любое количество модулей)
+Видеофайлы (Уроки в формате .mp4, .webm или .ogg/любое количество)
+Пример:
+public/courses/
+Основы Kotlin/
+01. Введение/
+01. Начало работы.mp4
+02. Типы данных/
+01. Числа.mp4
+Файлы формата отличного от .mp4, .webm или .ogg не мешают извлечению видео.
+Запуск
+Чтобы не открывать VS Code каждый раз, вы можете запускать платформу через Терминал:
+Откройте Терминал.
+Перейдите в папку с проектом: cd ~/путь/к/папке/local-course-player
+Запустите сервер командой: npm run dev
+Нажмите Cmd (⌘) + клик по ссылке http://localhost:5173 в терминале.
+Автоматизация запуска 
+Создайте файл start.command на рабочем столе.
+Вставьте в него код:
+Bash
+#!/bin/bash
+cd ~/local-course-player
+npm run dev
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+      4.  Windows start.bat
 
-Currently, two official plugins are available:
+@echo off
+cd /d "~\local-course-player"
+npm run dev
+pause.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Вместо ~ ваш путь к local-course-player
 
-## React Compiler
+———————————————————————
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
+Данные: Вся информация хранится в LocalStorage вашего браузера. Если вы решите сменить браузер (например, перейти с Chrome на Safari), прогресс придется «начинать заново» или переносить данные вручную. Не очищайте кэш браузера для адреса localhost, чтобы прогресс сохранялся.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Остановка сервера: Чтобы выключить платформу, просто закройте окно терминала или нажмите Ctrl + C в нем.
+
+:)

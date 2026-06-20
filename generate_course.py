@@ -35,7 +35,8 @@ def build_course_data():
             files = sorted([f for f in os.listdir(mod_path) if f.lower().endswith(('.mp4', '.webm', '.ogg'))], key=natural_sort_key)
             for file_idx, file_name in enumerate(files, start=1):
                 display_title = os.path.splitext(file_name)[0]
-                video_url = f"/courses/{course_name}/{mod_name}/{file_name}"
+                full_url = os.path.join("courses", course_name, mod_name, file_name)
+                video_url = "/" + full_url.replace(os.sep, '/')
                 module_item["lessons"].append({
                     "id": f"less_{course_idx}_{mod_idx}_{file_idx}",
                     "title": display_title,

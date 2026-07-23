@@ -85,7 +85,7 @@ def build_course_data():
                 display_title = os.path.splitext(file_name)[0]
                 
                 # Прямая ссылка для стриминга видео из Google Диска
-                video_url = f"https://lh3.googleusercontent.com/d/{file_id}"
+                video_url = f"https://drive.google.com/file/d/{file_id}/preview"
                 
                 module_item["lessons"].append({
                     "id": f"less_{course_idx}_{mod_idx}_{file_idx}",

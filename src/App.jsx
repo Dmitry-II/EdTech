@@ -77,7 +77,7 @@ function App() {
     }
   };
 
-  // Работа видеоплеера
+  // Работа видеоплеера с Google Диском
   useEffect(() => {
     if (!currentLesson || !activeCourse || currentView !== 'player') return;
 
@@ -85,10 +85,19 @@ function App() {
     const savedTime = localStorage.getItem(`course_time_${currentLesson.id}`);
     
     if (videoRef.current) {
-      videoRef.current.src = currentLesson.url;
-      videoRef.current.load();
-      if (savedTime) videoRef.current.currentTime = parseFloat(savedTime);
-      videoRef.current.play().catch(() => console.log("Ожидание клика для старта"));
+      const handleLoadedMetadata = () => {
+        if (savedTime && videoRef.current) {
+          videoRef.current.currentTime = parseFloat(savedTime);
+        }
+        videoRef.current?.play().catch(() => console.log("Ожидание взаимодействия с пользователем"));
+      };
+
+      const videoEl = videoRef.current;
+      videoEl.addEventListener('loadedmetadata', handleLoadedMetadata);
+
+      return () => {
+        videoEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      };
     }
   }, [currentLesson, activeCourse, currentView]);
 
@@ -128,15 +137,12 @@ function App() {
     const currentScrollTop = e.currentTarget.scrollTop;
     
     if (currentScrollTop > lastScrollTop.current && currentScrollTop > 70) {
-      // Скролл вниз — скрываем поиск
       setShowSearch(false);
     } else if (currentScrollTop < lastScrollTop.current) {
-      // Скролл вверх — показываем поиск
       setShowSearch(true);
     }
     lastScrollTop.current = currentScrollTop;
   };
-
 
   // =========================================================================
   // ЭКРАН 1: Дашборд курсов (Главная)
@@ -146,7 +152,6 @@ function App() {
       <div style={{ height: '100vh', overflowY: 'auto', backgroundColor: '#0f172a', color: '#f8fafc', fontFamily: 'sans-serif', padding: '40px' }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           
-          {/* Обведенный заголовок-"таблетка" */}
           <h1 style={{ 
             display: 'inline-block',
             margin: '0 0 40px 0', 
@@ -164,7 +169,7 @@ function App() {
           {!hasData ? (
             <div style={{ textAlign: 'center', padding: '50px', backgroundColor: '#1e293b', borderRadius: '12px' }}>
               <h2>Курсы не найдены</h2>
-              <p style={{ color: '#94a3b8' }}>Поместите папки с курсами в <code>public/courses/</code>.</p>
+              <p style={{ color: '#94a3b8' }}>Запустите скрипт <code>py generate_course.py</code> для синхронизации с Google Диском.</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -187,7 +192,6 @@ function App() {
                     
                     <h3 style={{ margin: '0 0 4px 0', fontSize: '22px', color: '#f8fafc', paddingRight: '40px' }}>{displayName}</h3>
                     
-                    {/* Кнопка сброса прогресса */}
                     <div style={{ marginBottom: '16px' }}>
                       <button 
                         onClick={(e) => resetCourseProgress(course, e)}
@@ -237,18 +241,15 @@ function App() {
     );
   }
 
-  // Общие расчеты прогресса для активного курса (используются на Экранах 2 и 3)
   const allCurrentCourseLessons = activeCourse.modules.reduce((acc, curr) => [...acc, ...curr.lessons], []);
   const totalLessonsCount = allCurrentCourseLessons.length;
   const completedCount = allCurrentCourseLessons.filter(l => completedLessons[l.id]).length;
   const progressPercentage = totalLessonsCount > 0 ? Math.round((completedCount / totalLessonsCount) * 100) : 0;
 
-
   // =========================================================================
-  // ЭКРАН 2: Страница "Содержание курса" (Стиль Stepik с Умным Поиском)
+  // ЭКРАН 2: Страница "Содержание курса"
   // =========================================================================
   if (currentView === 'content') {
-    // Фильтрация структуры модулей на основе поискового запроса
     const filteredModules = activeCourse.modules.map(mod => {
       const matchingLessons = mod.lessons.filter(lesson => 
         lesson.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -259,7 +260,6 @@ function App() {
     return (
       <div style={{ display: 'flex', height: '100vh', width: '100vw', fontFamily: 'sans-serif', backgroundColor: '#0f172a', color: '#f8fafc' }}>
         
-        {/* Левая боковая панель */}
         <aside style={{ width: '360px', minWidth: '360px', backgroundColor: '#1e293b', borderRight: '1px solid #334155', display: 'flex', flexDirection: 'column', padding: '30px' }}>
           <button 
             onClick={() => setCurrentView('dashboard')}
@@ -290,22 +290,20 @@ function App() {
           </button>
         </aside>
 
-        {/* Главная контентная область с умной строкой поиска */}
         <main 
           onScroll={handleContentScroll}
           style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', position: 'relative' }}
         >
-          {/* Скрывающаяся/появляющаяся строка поиска */}
           <div style={{
             position: 'sticky',
-            top: showSearch ? '0' : '-100px', // Выезжает за пределы экрана вверх
+            top: showSearch ? '0' : '-100px',
             left: 0,
             right: 0,
             backgroundColor: '#0f172a',
             padding: '24px 40px',
             borderBottom: '1px solid #334155',
             zIndex: 10,
-            transition: 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1)', // Плавный скролл-эффект
+            transition: 'top 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }}>
             <input 
               type="text"
@@ -318,18 +316,15 @@ function App() {
             />
           </div>
 
-          {/* Список модулей и уроков */}
           <div style={{ padding: '40px', display: 'flex', flexDirection: 'column', gap: '30px' }}>
             {filteredModules.length === 0 ? (
               <div style={{ color: '#64748b', textAlign: 'center', marginTop: '40px', fontSize: '16px' }}>Ничего не найдено по вашему запросу</div>
             ) : (
               filteredModules.map((mod) => {
-                // Проверяем, пройден ли модуль целиком
                 const isModuleDone = mod.lessons.length > 0 && mod.lessons.every(l => completedLessons[l.id]);
 
                 return (
                   <div key={mod.id} style={{ backgroundColor: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-                    {/* Заголовок Модуля */}
                     <div style={{ padding: '18px 24px', backgroundColor: '#1e293b', borderBottom: '1px solid #334155', display: 'flex', alignItems: 'center', gap: '14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '50%', backgroundColor: isModuleDone ? '#22c55e' : '#475569', color: '#ffffff', fontSize: '14px', fontWeight: 'bold' }}>
                         {isModuleDone ? "✓" : "•"}
@@ -337,7 +332,6 @@ function App() {
                       <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: isModuleDone ? '#4ade80' : '#e2e8f0' }}>{mod.title}</h3>
                     </div>
 
-                    {/* Список уроков */}
                     <div>
                       {mod.lessons.map((lesson) => {
                         const isLessonDone = !!completedLessons[lesson.id];
@@ -350,7 +344,6 @@ function App() {
                             onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#334155'}
                             onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                           >
-                            {/* Круглый маркер Stepik-style */}
                             <div 
                               onClick={(e) => toggleLessonCompletion(lesson.id, e)}
                               style={{ width: '20px', height: '20px', borderRadius: '50%', border: isLessonDone ? 'none' : '2px solid #64748b', backgroundColor: isLessonDone ? '#22c55e' : 'transparent', marginRight: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontSize: '11px', fontWeight: 'bold', flexShrink: 0 }}
@@ -374,18 +367,15 @@ function App() {
     );
   }
 
-
   // =========================================================================
   // ЭКРАН 3: Видеоплеер курса
   // =========================================================================
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', fontFamily: 'sans-serif', backgroundColor: '#0f172a', color: '#f8fafc' }}>
       
-      {/* Сайдбар со списком уроков */}
       <aside style={{ width: '380px', minWidth: '380px', backgroundColor: '#1e293b', borderRight: '1px solid #334155', display: 'flex', flexDirection: 'column', height: '100%' }}>
         <div style={{ padding: '24px', borderBottom: '1px solid #334155', backgroundColor: '#0f172a' }}>
           
-          {/* Навигационный мост между экранами */}
           <div style={{ display: 'flex', gap: '10px', marginBottom: '18px' }}>
             <button onClick={() => setCurrentView('dashboard')} style={{ backgroundColor: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.borderColor = '#94a3b8' } onMouseOut={(e) => e.currentTarget.style.borderColor = '#475569' }>◀ Главная</button>
             <button onClick={() => setCurrentView('content')} style={{ backgroundColor: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', padding: '6px 12px', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }} onMouseOver={(e) => e.currentTarget.style.borderColor = '#94a3b8' } onMouseOut={(e) => e.currentTarget.style.borderColor = '#475569' }>☰ Содержание</button>
@@ -405,7 +395,6 @@ function App() {
           </div>
         </div>
 
-        {/* Список модулей */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '12px 0' }}>
           {activeCourse.modules.map((mod) => (
             <div key={mod.id} style={{ marginBottom: '16px' }}>
@@ -434,7 +423,6 @@ function App() {
         </div>
       </aside>
 
-      {/* Правая панель с видеоплеером */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}>
         {currentLesson ? (
           <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '40px' }}>
@@ -451,7 +439,13 @@ function App() {
             </div>
             
             <div style={{ flex: 1, backgroundColor: '#000000', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <video ref={videoRef} controls onTimeUpdate={handleTimeUpdate} onEnded={handleMediaEnded} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              <iframe 
+                src={currentLesson.url} 
+                width="100%" 
+                height="100%" 
+                style={{ border: 'none' }}
+                allow="autoplay; fullscreen"
+              />
             </div>
           </div>
         ) : (

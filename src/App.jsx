@@ -439,12 +439,14 @@ function App() {
             </div>
             
             <div style={{ flex: 1, backgroundColor: '#000000', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <iframe 
-                src={currentLesson.url} 
-                width="100%" 
-                height="100%" 
-                style={{ border: 'none' }}
-                allow="autoplay; fullscreen"
+              <video 
+                ref={videoRef} 
+                src={currentLesson.url}
+                controls 
+                referrerPolicy="no-referrer"
+                onTimeUpdate={handleTimeUpdate} 
+                onEnded={handleMediaEnded} 
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
               />
             </div>
           </div>

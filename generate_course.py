@@ -5,7 +5,7 @@ from googleapiclient.discovery import build
 
 # ================= НАСТРОЙКИ =================
 API_KEY = "AIzaSyCDsY5CHB7hYbW16OqX2PyD7WTwYSj4rCw"
-ROOT_FOLDER_ID = "1qSGkvSEyaI1t6hojDVG4nJtPOjxk2rEQ"
+ROOT_FOLDER_ID = "1qSGkvSEyaI1t6hojDVG4nJtPOjxk2rEQ" # Твой ID папки
 # =============================================
 
 drive_service = build('drive', 'v3', developerKey=API_KEY)
@@ -14,7 +14,6 @@ def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
 def get_items_in_folder(folder_id):
-    """Возвращает список всех файлов и папок внутри указанной папки."""
     query = f"'{folder_id}' in parents and trashed = false"
     items = []
     page_token = None
@@ -37,7 +36,6 @@ def get_items_in_folder(folder_id):
 def build_course_data():
     print("[/] Подключение к Google Диску и сканирование курсов...")
     
-    # 1. Получаем список всех папок с курсами
     root_items = get_items_in_folder(ROOT_FOLDER_ID)
     course_folders = [item for item in root_items if item['mimeType'] == 'application/vnd.google-apps.folder']
     course_folders.sort(key=lambda x: natural_sort_key(x['name']))
@@ -54,7 +52,6 @@ def build_course_data():
             "modules": []
         }
         
-        # 2. Получаем модули (подпапки) текущего курса
         course_contents = get_items_in_folder(course_id)
         module_folders = [item for item in course_contents if item['mimeType'] == 'application/vnd.google-apps.folder']
         module_folders.sort(key=lambda x: natural_sort_key(x['name']))
@@ -69,7 +66,6 @@ def build_course_data():
                 "lessons": []
             }
             
-            # 3. Получаем видеофайлы текущего модуля
             mod_contents = get_items_in_folder(mod_id)
             video_files = [
                 f for f in mod_contents 
@@ -81,11 +77,10 @@ def build_course_data():
                 file_name = video_file['name']
                 file_id = video_file['id']
                 
-                # Убираем расширение для заголовка
                 display_title = os.path.splitext(file_name)[0]
                 
-                # Прямая ссылка для стриминга видео из Google Диска
-                video_url = f"https://drive.google.com/file/d/{file_id}/preview"
+                # Прямая ссылка для проигрывания напрямую в <video> HTML5
+                video_url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
                 
                 module_item["lessons"].append({
                     "id": f"less_{course_idx}_{mod_idx}_{file_idx}",
@@ -99,7 +94,6 @@ def build_course_data():
         if course_item["modules"]:
             all_courses.append(course_item)
 
-    # Записываем точный такой же src/courseData.js
     os.makedirs('src', exist_ok=True)
     output_path = os.path.join('src', 'courseData.js')
     

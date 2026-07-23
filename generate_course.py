@@ -1,42 +1,92 @@
-import os
 import json
 import re
+import os
+from googleapiclient.discovery import build
+
+# ================= НАСТРОЙКИ =================
+API_KEY = "AIzaSyCDsY5CHB7hYbW16OqX2PyD7WTwYSj4rCw"
+ROOT_FOLDER_ID = "1qSGkvSEyaI1t6hojDVG4nJtPOjxk2rEQ"
+# =============================================
+
+drive_service = build('drive', 'v3', developerKey=API_KEY)
 
 def natural_sort_key(s):
     return [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', s)]
 
-def build_course_data():
-    base_dir = os.path.join('public', 'courses')
-    if not os.path.exists(base_dir):
-        os.makedirs(base_dir)
-        print(f"Директория {base_dir} создана. Поместите туда папки с курсами.")
-        return
-        
-    all_courses = []
-    courses = sorted([c for c in os.listdir(base_dir) if os.path.isdir(os.path.join(base_dir, c))], key=natural_sort_key)
+def get_items_in_folder(folder_id):
+    """Возвращает список всех файлов и папок внутри указанной папки."""
+    query = f"'{folder_id}' in parents and trashed = false"
+    items = []
+    page_token = None
     
-    for course_idx, course_name in enumerate(courses, start=1):
-        course_path = os.path.join(base_dir, course_name)
+    while True:
+        response = drive_service.files().list(
+            q=query,
+            fields="nextPageToken, files(id, name, mimeType)",
+            pageSize=1000,
+            pageToken=page_token
+        ).execute()
+        
+        items.extend(response.get('files', []))
+        page_token = response.get('nextPageToken')
+        if not page_token:
+            break
+            
+    return items
+
+def build_course_data():
+    print("[/] Подключение к Google Диску и сканирование курсов...")
+    
+    # 1. Получаем список всех папок с курсами
+    root_items = get_items_in_folder(ROOT_FOLDER_ID)
+    course_folders = [item for item in root_items if item['mimeType'] == 'application/vnd.google-apps.folder']
+    course_folders.sort(key=lambda x: natural_sort_key(x['name']))
+    
+    all_courses = []
+    
+    for course_idx, course_folder in enumerate(course_folders, start=1):
+        course_name = course_folder['name']
+        course_id = course_folder['id']
+        
         course_item = {
             "id": f"course_{course_idx}",
             "originalTitle": course_name,
             "modules": []
         }
         
-        modules = sorted([m for m in os.listdir(course_path) if os.path.isdir(os.path.join(course_path, m))], key=natural_sort_key)
-        for mod_idx, mod_name in enumerate(modules, start=1):
-            mod_path = os.path.join(course_path, mod_name)
+        # 2. Получаем модули (подпапки) текущего курса
+        course_contents = get_items_in_folder(course_id)
+        module_folders = [item for item in course_contents if item['mimeType'] == 'application/vnd.google-apps.folder']
+        module_folders.sort(key=lambda x: natural_sort_key(x['name']))
+        
+        for mod_idx, mod_folder in enumerate(module_folders, start=1):
+            mod_name = mod_folder['name']
+            mod_id = mod_folder['id']
+            
             module_item = {
                 "id": f"mod_{course_idx}_{mod_idx}",
                 "title": mod_name,
                 "lessons": []
             }
             
-            files = sorted([f for f in os.listdir(mod_path) if f.lower().endswith(('.mp4', '.webm', '.ogg'))], key=natural_sort_key)
-            for file_idx, file_name in enumerate(files, start=1):
+            # 3. Получаем видеофайлы текущего модуля
+            mod_contents = get_items_in_folder(mod_id)
+            video_files = [
+                f for f in mod_contents 
+                if f['mimeType'].startswith('video/') or f['name'].lower().endswith(('.mp4', '.webm', '.ogg', '.mkv'))
+            ]
+            video_files.sort(key=lambda x: natural_sort_key(x['name']))
+            
+            for file_idx, video_file in enumerate(video_files, start=1):
+                file_name = video_file['name']
+                file_id = video_file['id']
+                
+                # Убираем расширение для заголовка
                 display_title = os.path.splitext(file_name)[0]
-                full_url = os.path.join("courses", course_name, mod_name, file_name)
-                video_url = "/" + full_url.replace(os.sep, '/')
+                
+                # Прямая ссылка для стриминга видео из Google Диска
+                video_url = f"https://lh3.googleusercontent.com/d/{file_id}"
+                
                 module_item["lessons"].append({
                     "id": f"less_{course_idx}_{mod_idx}_{file_idx}",
                     "title": display_title,
@@ -49,14 +99,17 @@ def build_course_data():
         if course_item["modules"]:
             all_courses.append(course_item)
 
+    # Записываем точный такой же src/courseData.js
+    os.makedirs('src', exist_ok=True)
     output_path = os.path.join('src', 'courseData.js')
+    
     with open(output_path, 'w', encoding='utf-8') as f:
         f.write("// Автогенерируемый файл. Не редактируйте вручную.\n")
         f.write("export const courseData = ")
         f.write(json.dumps(all_courses, indent=2, ensure_ascii=False))
         f.write(";\n")
         
-    print(f"Успех! Проиндексировано курсов: {len(all_courses)}.")
+    print(f"\n[+] Успех! Проиндексировано курсов с Google Диска: {len(all_courses)}.")
 
 if __name__ == '__main__':
     build_course_data()

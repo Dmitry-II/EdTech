@@ -80,7 +80,7 @@ def build_course_data():
                 display_title = os.path.splitext(file_name)[0]
                 
                 # Прямая ссылка для проигрывания напрямую в <video> HTML5
-                video_url = f"https://drive.google.com/uc?export=download&id={file_id}&confirm=t"
+                video_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media&key={API_KEY}"
                 
                 module_item["lessons"].append({
                     "id": f"less_{course_idx}_{mod_idx}_{file_idx}",

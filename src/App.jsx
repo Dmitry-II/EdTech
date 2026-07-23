@@ -443,7 +443,6 @@ function App() {
                 ref={videoRef} 
                 src={currentLesson.url}
                 controls 
-                referrerPolicy="no-referrer"
                 onTimeUpdate={handleTimeUpdate} 
                 onEnded={handleMediaEnded} 
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }} 

@@ -15,7 +15,7 @@
 
 ДОБАВЛЕНИЕ СВОИХ КУРСОВ
 
-1 Для добавления своих модулей перейти по пути public -> courses -> папка курса (с названием вашего курса) -> папка ваших модулей курса -> видео любых форматов (другие типы данных игнорируются)
+1 Для добавления своих модулей создать путь public -> courses -> папка курса (с названием вашего курса) -> папка ваших модулей курса -> видео любых форматов (другие типы данных игнорируются)
 3 Остановить хостинг сайта кнопкой Остановить
 2 Перезапустить EdTechLauncher.exe 
 
@@ -43,7 +43,7 @@ LAUNCH
 
 ADDING YOUR COURSES
 
-1 To add your modules, go to the path public -> courses -> course folder (with your course name) -> your course modules folder -> videos in any formats (other data types are ignored)
+1 To add your modules, create the path public -> courses -> course folder (with your course name) -> your course modules folder -> videos in any formats (other data types are ignored)
 3 Stop site hosting with the Stop button
 2 Restart EdTechLauncher.exe
 

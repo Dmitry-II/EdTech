@@ -51,4 +51,4 @@ TROUBLESHOOTING
 
 Most errors occur because some elements failed to load; you need to read the log in the lower-left corner of the application and download the necessary element
 
-:)
+:):):)
